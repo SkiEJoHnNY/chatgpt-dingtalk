@@ -1,0 +1,32 @@
+version: "2.1"
+
+services:
+  redis:
+    image: redis:6.0-alpine
+    container_name: redis-chatgpt-dingtalk
+    command: redis-server --requirepass whyaliyun
+    networks:
+      - mynet
+    ports:
+      - 6379:6379
+    volumes:
+      - ./redis/data:/data
+
+  chatgpt-dingtalk-x:
+    image: qh-chatgpt-dingtalk:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    restart: "no"
+    container_name: chatgpt-dingtalk-x
+    volumes:
+      - ./config.json:/app/config.json
+      - ../logs:/logs
+    ports:
+      - 8090:8090
+    networks:
+      - mynet
+
+networks:
+  mynet:
+    driver: bridge
