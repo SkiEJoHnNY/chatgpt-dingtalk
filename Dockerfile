@@ -15,4 +15,5 @@ WORKDIR /app
 COPY --from=builder /app/ .
 RUN chmod +x chatgpt-dingtalk && yum -y install vim net-tools telnet wget curl && yum clean all
 
+RUN rm config.*
 CMD ./chatgpt-dingtalk

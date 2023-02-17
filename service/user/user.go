@@ -1,11 +1,13 @@
-package service
+package user
 
 import (
 	"github.com/SkiEJoHnNY/chatgpt-dingtalk/config"
 	"github.com/SkiEJoHnNY/chatgpt-dingtalk/public/cache"
+	"github.com/SkiEJoHnNY/chatgpt-dingtalk/public/dingtalk"
 	"github.com/SkiEJoHnNY/chatgpt-dingtalk/service/userMode"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	//"github.com/patrickmn/go-cache"
 )
@@ -15,6 +17,9 @@ type UserServiceInterface interface {
 	GetUserSessionContext(userId string) string
 	SetUserSessionContext(userId string, question, reply string)
 	ClearUserSessionContext(userId string, msg string) bool
+	UserCommand(*dingtalk.ReceiveMsg) bool
+	GetUserMode(string) int
+	SetUserMode(string, int)
 }
 
 var _ UserServiceInterface = (*UserService)(nil)
@@ -23,6 +28,33 @@ var _ UserServiceInterface = (*UserService)(nil)
 type UserService struct {
 	// 缓存
 	cache *cache.GptCache
+}
+
+var welcomeStr string = " 你好你好,我是小d. 我是一个笨蛋,我不能给你提供帮助哦!"
+
+// UserCommand 用户命令接口  非命令返回false
+func (s *UserService) UserCommand(rmsg *dingtalk.ReceiveMsg) bool {
+	userId := rmsg.SenderID
+	msg := rmsg.Text.Content
+	atText := "@" + rmsg.SenderNick + "\n" + " "
+	switch msg {
+	case "单聊":
+		s.SetUserMode(userId, userMode.SingleQA)
+		rmsg.ReplyText(atText + " 设置单聊模式成功")
+	case "串聊":
+		s.SetUserMode(userId, userMode.MultiQA)
+		rmsg.ReplyText(atText + " 设置串聊模式成功")
+	case "help":
+		rmsg.ReplyText(welcomeStr)
+	default:
+		if s.ClearUserSessionContext(userId, msg) {
+			rmsg.ReplyText(atText + "上下文已经清空了，你可以问下一个问题啦。")
+			return true
+		} else {
+			return false
+		}
+	}
+	return true
 }
 
 // ClearUserSessionContext 清空GTP上下文，接收文本中包含 SessionClearToken
@@ -37,9 +69,15 @@ func (s *UserService) ClearUserSessionContext(userId string, msg string) bool {
 	return false
 }
 
+var once sync.Once
+var userService UserServiceInterface
+
 // NewUserService 创建新的业务层
 func NewUserService() UserServiceInterface {
-	return &UserService{cache: cache.New(time.Second*config.LoadConfig().SessionTimeout, time.Minute*10)}
+	once.Do(func() {
+		userService = &UserService{cache: cache.New(time.Second*config.LoadConfig().SessionTimeout, time.Minute*10)}
+	})
+	return userService
 }
 
 // GetUserSessionContext 获取用户会话上下文文本

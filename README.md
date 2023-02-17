@@ -177,7 +177,7 @@ $ cd chatgpt-dingtalk
 $ cp config.dev.json config.json
 
 # 启动项目
-$ go run main.go
+$ go run master.go
 ```
 
 ## 配置文件说明

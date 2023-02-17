@@ -13,10 +13,7 @@ services:
       - ./redis/data:/data
 
   chatgpt-dingtalk-x:
-    image: qh-chatgpt-dingtalk:latest
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+    image: skiejohnny/qh-chatgpt-dingtalk:latest
     restart: "no"
     container_name: chatgpt-dingtalk-x
     volumes:
