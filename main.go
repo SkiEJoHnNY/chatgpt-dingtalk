@@ -88,7 +88,7 @@ func ProcessRequest(rmsg public.ReceiveMsg) error {
 		ctx := context.Background()
 		if lock == nil {
 			_, err = rmsg.ReplyText("宝 上一个回答还没返回呢")
-			log.Debug(rmsg.SenderID, "Not Get RedisLock ")
+			log.Debug(rmsg.SenderID, " Not Get RedisLock ")
 			return nil
 		}
 		lock.Refresh(ctx, expiration, nil)
@@ -107,6 +107,11 @@ func ProcessRequest(rmsg public.ReceiveMsg) error {
 		}
 		if reply == "" {
 			log.Warning("get gpt result falied: %v\n", err)
+			_, err = rmsg.ReplyText(atText + "宝 openAI gpt 返回空string. 你的问题太蓝拉!")
+			if err != nil {
+				log.Warning("send message error: %v \n", err)
+				return err
+			}
 			return nil
 		}
 		// 回复@我的用户

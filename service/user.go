@@ -3,6 +3,8 @@ package service
 import (
 	"github.com/SkiEJoHnNY/chatgpt-dingtalk/config"
 	"github.com/SkiEJoHnNY/chatgpt-dingtalk/public/cache"
+	"github.com/SkiEJoHnNY/chatgpt-dingtalk/service/userMode"
+	"strconv"
 	"strings"
 	"time"
 	//"github.com/patrickmn/go-cache"
@@ -53,5 +55,24 @@ func (s *UserService) GetUserSessionContext(userId string) string {
 // SetUserSessionContext 设置用户会话上下文文本，question用户提问内容，GTP回复内容
 func (s *UserService) SetUserSessionContext(userId string, question, reply string) {
 	value := question + "\n" + reply
+	s.cache.Set(userId, value, time.Second*config.LoadConfig().SessionTimeout)
+}
+
+const userModeSuffix = "_USERMODE"
+
+// GetUserMode  获取用户会话模式
+func (s *UserService) GetUserMode(userId string) int {
+
+	sessionContext, ok := s.cache.Get(userId + userModeSuffix)
+	if !ok {
+		return userMode.NotSet
+	}
+	ans, _ := strconv.Atoi(sessionContext.(string))
+	return ans
+}
+
+// SetUserMode  设置用户会话模式
+func (s *UserService) SetUserMode(userId string, mode int) {
+	value := string(rune(mode))
 	s.cache.Set(userId, value, time.Second*config.LoadConfig().SessionTimeout)
 }
